@@ -13,10 +13,10 @@
 								  .FirstOrDefault() ?? "";
 		settings.LogPath = args.Where(arg => arg.ToLower().StartsWith("/logpath="))
 						  .Select(arg => arg.Substring("/logpath=".Length))
-						  .FirstOrDefault() ?? "C:\\Logs\\";
+						  .FirstOrDefault() ?? ".\\Logs\\";
 		settings.RepoPath = args.Where(arg => arg.ToLower().StartsWith("/repopath="))
 						  .Select(arg => arg.Substring("/repopath=".Length))
-						  .FirstOrDefault() ?? "C:\\Repo\\";
+						  .FirstOrDefault() ?? ".\\Repo\\";
 		settings.UseGit = args.Where(arg => arg.ToLower().StartsWith("/usegit="))
 						  .Select(arg => arg.Substring("/usegit=".Length))
 						  .FirstOrDefault() ?? "false";
