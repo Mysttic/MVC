@@ -20,6 +20,9 @@ public class LogManager : ILogManager
 	{
 		string logMessage = $"{DateTime.Now} - {caller}: {message}";
 		Console.WriteLine(logMessage);		
-		await File.AppendAllTextAsync(Settings.LogPath + "\\log.txt", logMessage + Environment.NewLine);
+		string filePath = Path.Combine(
+			Settings.LogPath,
+			"log.txt");
+		await File.AppendAllTextAsync(filePath, logMessage + Environment.NewLine);
 	}
 }
