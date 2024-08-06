@@ -20,11 +20,11 @@
 		settings.UseGit = args.Where(arg => arg.ToLower().StartsWith("/usegit="))
 						  .Select(arg => arg.Substring("/usegit=".Length))
 						  .FirstOrDefault() ?? "false";
-		settings.LogChannels = args.Where(arg => arg.ToLower().StartsWith("/logchannels="))
-								.Select(arg => arg.Substring("/logchannels=".Length))
+		settings.GitChannels = args.Where(arg => arg.ToLower().StartsWith("/gitchannels="))
+								.Select(arg => arg.Substring("/gitchannels=".Length))
 								.FirstOrDefault() ?? "true";
-		settings.LogCodeTemplates = args.Where(arg => arg.ToLower().StartsWith("/logcodetemplates="))
-								   .Select(arg => arg.Substring("/logcodetemplates=".Length))
+		settings.GitCodeTemplates = args.Where(arg => arg.ToLower().StartsWith("/gitcodetemplates="))
+								   .Select(arg => arg.Substring("/gitcodetemplates=".Length))
 								   .FirstOrDefault() ?? "true";
 		return settings;
 	}

@@ -7,6 +7,7 @@ public interface IListener
 	ILogManager LogManager { get; set; }
 	IGitManager GitManager { get; set; }
 	Settings Settings { get; set; }
+	Task Listener();
 
 	public void Start()
 	{
@@ -32,7 +33,6 @@ public interface IListener
 	{
 		LogManager.Log("Stopping listener", GetType().Name).Wait();
 	}
-	Task Listener();
 	async Task Listen(DbConnection dbConnection, DbCommand channelCommand, DbCommand codeTemplateCommand)
 	{
 		await dbConnection.OpenAsync();
@@ -41,11 +41,13 @@ public interface IListener
 		Dictionary<string, string> channels = new Dictionary<string, string>();
 		Dictionary<string, string> codeTemplates = new Dictionary<string, string>();
 
+		List<Func<Task>> actions = InitializeActions(channelCommand, codeTemplateCommand, channels, codeTemplates);
+		
 		while (true)
 		{
-			await ExecuteCommand(channelCommand, channels, "Channels");
-			await ExecuteCommand(codeTemplateCommand, codeTemplates, "CodeTemplates");
-
+			foreach (Func<Task> action in actions)			
+				await action();
+			
 			// Wait for a while before querying again
 			await Task.Delay(5000); // 5 seconds
 		}
@@ -79,5 +81,27 @@ public interface IListener
 			await LogManager.Log($"Error reading data: {ex.Message}", GetType().Name);
 		}
 
+	}
+	List<Func<Task>> InitializeActions(DbCommand channelCommand, DbCommand codeTemplateCommand, Dictionary<string, string> channels, Dictionary<string, string> codeTemplates)
+	{
+		List<Func<Task>> actions = new List<Func<Task>>();
+		if (Settings.GitChannels.ToLower() == bool.TrueString.ToLower())
+		{
+			actions.Add(async () => await ExecuteCommand(channelCommand, channels, "Channels"));
+			LogManager.Log("Listening for changes in Channels", GetType().Name).Wait();
+		}
+		else		
+			LogManager.Log("Not listening for changes in Channels", GetType().Name).Wait();
+		
+		if (Settings.GitCodeTemplates.ToLower() == bool.TrueString.ToLower())
+		{
+			actions.Add(async () => await ExecuteCommand(codeTemplateCommand, codeTemplates, "CodeTemplates"));
+			LogManager.Log("Listening for changes in CodeTemplates", GetType().Name).Wait();
+		}
+		else		
+			LogManager.Log("Not listening for changes in CodeTemplates", GetType().Name).Wait();
+		
+
+		return actions;
 	}
 }
