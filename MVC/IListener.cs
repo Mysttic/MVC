@@ -3,7 +3,7 @@ public interface IListener
 {
 	ILogManager LogManager { get; set; }
 	Settings Settings { get; set; }
-	public void Start()
+	public async Task Start()
 	{
 		if (Settings == null || string.IsNullOrEmpty(Settings.ConnectionString))
 		{
@@ -12,8 +12,17 @@ public interface IListener
 		}
 		try
 		{
-			LogManager.Log("Starting listener", GetType().Name).Wait();
-			Listener().Wait();
+			Task.WaitAll(ChannelListener(), CodeTemplateListener());
+			//if (bool.TryParse(Settings?.LogChannels, out bool channelRes))
+			//{
+			//	LogManager.Log("Starting channel listener", GetType().Name).Wait();
+				
+			//}
+			//if (bool.TryParse(Settings?.LogCodeTemplates, out bool codetemplateRes))
+			//{
+			//	LogManager.Log("Starting code template listener", GetType().Name).Wait();
+			//	await CodeTemplateListener();
+			//}
 		}
 		catch (Exception ex)
 		{
@@ -27,5 +36,6 @@ public interface IListener
 	{
 		LogManager.Log("Stopping listener", GetType().Name).Wait();
 	}
-	Task Listener();
+	Task ChannelListener();
+	Task CodeTemplateListener();
 }

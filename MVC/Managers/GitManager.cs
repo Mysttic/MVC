@@ -23,8 +23,11 @@ public class GitManager : IGitManager
 	{
 		string filePath = Path.Combine(
 		Settings.RepoPath,
+		caller,
 		dto.Name +
-			(Settings.UseGit == "true" ? "" : $"_{DateTime.Now.ToString().Replace('.', '_').Replace(':', '_')}_Rev{dto.Revision}"));
+			(Settings.UseGit == "true" ? "" : $"_{DateTime.Now.ToString().Replace('.', '_').Replace(':', '_')}_Rev{dto.Revision}").Trim());
+		if (!Directory.Exists(filePath))
+			Directory.CreateDirectory(filePath);
 		File.WriteAllText(filePath, dto.Content);
 
 		if (Settings.UseGit == "true")
@@ -33,6 +36,7 @@ public class GitManager : IGitManager
 				await NewRepo(Settings.RepoPath);
 
 			await Stage(filePath);
+
 			if (HasChanges())
 				await Commit(dto.Name, caller);
 		}
@@ -73,7 +77,8 @@ public class GitManager : IGitManager
 	{
 		using (var repo = GetRepoFromPath())
 		{
-			return repo.RetrieveStatus().IsDirty;
+			var status = repo.RetrieveStatus(new StatusOptions { IncludeUntracked = true });
+			return status.Any(entry => entry.State != FileStatus.Unaltered);
 		}
 	}
 
