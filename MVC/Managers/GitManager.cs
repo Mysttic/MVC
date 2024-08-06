@@ -22,13 +22,18 @@ public class GitManager : IGitManager
 	public async Task Change(DbDataReaderDto dto, [CallerMemberName] string caller = "")
 	{
 		string filePath = Path.Combine(
-		Settings.RepoPath,
-		caller,
-		dto.Name +
-			(Settings.UseGit == "true" ? "" : $"_{DateTime.Now.ToString().Replace('.', '_').Replace(':', '_')}_Rev{dto.Revision}").Trim());
+			Settings.RepoPath,
+			caller);		
+
 		if (!Directory.Exists(filePath))
 			Directory.CreateDirectory(filePath);
-		File.WriteAllText(filePath, dto.Content);
+
+		string file = Path.Combine(filePath, 
+			dto.Name.FormatFileName() +
+			(Settings.UseGit == "true" ? "" : $"_{DateTime.Now.ToString().Replace('.', '_').Replace(':', '_')}_Rev{dto.Revision}").Trim()
+			+".xml");
+
+		File.WriteAllText(file, dto.Content);
 
 		if (Settings.UseGit == "true")
 		{

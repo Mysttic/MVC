@@ -5,6 +5,6 @@
 		Settings settings = new Settings().FillParameters(args);
 		IListener listener = new PostgreSQLListener(settings);
 		AppDomain.CurrentDomain.ProcessExit += (s, e) => listener.Stop();
-		await listener.Start();
+		listener.Start();
 	}
 }
