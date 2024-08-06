@@ -15,4 +15,8 @@
     <ProjectReference Include="..\MVC\MVC.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
 </Project>

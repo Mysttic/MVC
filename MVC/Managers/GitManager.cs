@@ -29,7 +29,7 @@ public class GitManager : IGitManager
 			Directory.CreateDirectory(filePath);
 
 		string file = Path.Combine(filePath, 
-			dto.Name.FormatFileName() +
+			dto.Id.FormatFileName() +
 			(Settings.UseGit == "true" ? "" : $"_{DateTime.Now.ToString().Replace('.', '_').Replace(':', '_')}_Rev{dto.Revision}").Trim()
 			+".xml");
 
@@ -43,7 +43,7 @@ public class GitManager : IGitManager
 			await Stage(filePath);
 
 			if (HasChanges())
-				await Commit(dto.Name, caller);
+				await Commit(dto.Id, caller);
 		}
 	}
 
@@ -63,6 +63,23 @@ public class GitManager : IGitManager
 			repo.Commit(message, author, committer);
 			await LogManager.Log($"Committed: {message} by {caller}");
 		}
+	}
+
+	public Dictionary<string, string> GetRepo(string repo)
+	{
+		var result = new Dictionary<string, string>();
+
+		string filePath = Path.Combine(Settings.RepoPath, repo);
+		if (!Directory.Exists(filePath))
+			return result;
+
+		foreach (var file in Directory.GetFiles(filePath))
+		{
+			string content = File.ReadAllText(file);
+			result.Add(file, content);
+		}
+
+		return result;
 	}
 
 	/// <summary>

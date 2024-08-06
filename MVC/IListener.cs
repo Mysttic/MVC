@@ -38,8 +38,8 @@ public interface IListener
 		await dbConnection.OpenAsync();
 		await LogManager.Log("Connected to the database.", GetType().Name);
 
-		Dictionary<string, string> channels = new Dictionary<string, string>();
-		Dictionary<string, string> codeTemplates = new Dictionary<string, string>();
+		Dictionary<string, string> channels = GitManager.GetRepo("Channels");
+		Dictionary<string, string> codeTemplates = GitManager.GetRepo("CodeTemplates");
 
 		List<Func<Task>> actions = InitializeActions(channelCommand, codeTemplateCommand, channels, codeTemplates);
 		
