@@ -5,6 +5,6 @@
 	public string RepoPath { get; set; }
 	public string UseGit { get; set; }
 
-	public string LogChannels { get; set; } = "true";
-	public string LogCodeTemplates { get; set; } = "true";
+	public string GitChannels { get; set; } = "true";
+	public string GitCodeTemplates { get; set; } = "true";
 }
