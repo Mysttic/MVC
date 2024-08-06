@@ -6,9 +6,13 @@
 
 <h2>About this Project</h2>
 
-With this tool, you will be able to monitor what changes occur in the configuration of channels saved in the database. 
-An independently running application, after connecting to the database, monitors the table with channels, 
-and after a change occurs, saves the configuration of a given channel to the repository directory.
+With this tool, you will be able to monitor what changes occur in the configuration saved in the database. 
+An independently running application, after connecting to the database, monitors the tables, 
+and after a change occurs, saves the configuration of a given record to the repository directory.
+
+Tables included for version control checking:
+- Channel
+- Code_template
 
 Supported databases:
 - MSSQL
@@ -26,7 +30,9 @@ In the startup parameters we pass the following configuration parameters:
 - /connection string - mandatory - access to the database to listen to
 - /logpath - location where logs are saved
 - /repopath - location where versions of changes are saved
-- /usegit - (default false) specifies whether we want to use the git service for the change history or the option to save individual versions in separate files
+- /usegit - (default false) - specifies whether we want to use the git service for the change history or the option to save individual versions in separate files
+- /gitchannels (default true) - allow to turn on/off checking version control for Channels
+- /gitcodetemplates (default true) - allow to turn on/off checking version control for Code templates
 
 Example startup script:
 
