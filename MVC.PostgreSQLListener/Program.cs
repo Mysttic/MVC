@@ -1,6 +1,6 @@
 ﻿internal class Program
 {
-	private static void Main(string[] args)
+	private static async Task Main(string[] args)
 	{
 		Settings settings = new Settings().FillParameters(args);
 		IListener listener = new PostgreSQLListener(settings);

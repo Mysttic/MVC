@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:8.0-windowsservercore-ltsc2022 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-windowsservercore-ltsc2022 AS build
 WORKDIR /src
 COPY ["MVC.PostgreSQLListener/MVC.PostgreSQLListener.csproj", "MVC.PostgreSQLListener/"]
 RUN dotnet restore "MVC.PostgreSQLListener/MVC.PostgreSQLListener.csproj"

@@ -22,10 +22,18 @@ public class GitManager : IGitManager
 	public async Task Change(DbDataReaderDto dto, [CallerMemberName] string caller = "")
 	{
 		string filePath = Path.Combine(
-		Settings.RepoPath,
-		dto.Name +
-			(Settings.UseGit == "true" ? "" : $"_{DateTime.Now.ToString().Replace('.', '_').Replace(':', '_')}_Rev{dto.Revision}"));
-		File.WriteAllText(filePath, dto.Content);
+			Settings.RepoPath,
+			caller);		
+
+		if (!Directory.Exists(filePath))
+			Directory.CreateDirectory(filePath);
+
+		string file = Path.Combine(filePath, 
+			dto.Name.FormatFileName() +
+			(Settings.UseGit == "true" ? "" : $"_{DateTime.Now.ToString().Replace('.', '_').Replace(':', '_')}_Rev{dto.Revision}").Trim()
+			+".xml");
+
+		File.WriteAllText(file, dto.Content);
 
 		if (Settings.UseGit == "true")
 		{
@@ -33,6 +41,7 @@ public class GitManager : IGitManager
 				await NewRepo(Settings.RepoPath);
 
 			await Stage(filePath);
+
 			if (HasChanges())
 				await Commit(dto.Name, caller);
 		}
@@ -73,7 +82,8 @@ public class GitManager : IGitManager
 	{
 		using (var repo = GetRepoFromPath())
 		{
-			return repo.RetrieveStatus().IsDirty;
+			var status = repo.RetrieveStatus(new StatusOptions { IncludeUntracked = true });
+			return status.Any(entry => entry.State != FileStatus.Unaltered);
 		}
 	}
 
