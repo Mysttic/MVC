@@ -2,7 +2,7 @@
 
 ![MCVClogo](https://github.com/user-attachments/assets/7aa0d96f-4d1b-4f3f-bb56-ddb2bc5abdf1)
 
-**Allow you to backup your Mirth Connect Channels with full changes history**
+**Allow you to backup your Mirth Connect Configurations with full changes history**
 
 <h2>About this Project</h2>
 
@@ -65,7 +65,7 @@ docker run -v /host_mnt/c/MVC:/app/MVC mvc.postgresqllistener --build-arg /conne
 
 Just remember to adjust this directory in further parameters (logpath and repopath).
 
-##### And very important reminder, these containers were hosted on LINUX, so remember about catalogue structures.
+##### And very important reminder, these containers were hosted on LINUX, so remember about catalogue structures and restrictions.
 
 <h2>Disclaimer</h2>
 This project and its creators are not affiliated with NextGen Healthcare in any way. 
