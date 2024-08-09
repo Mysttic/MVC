@@ -1,5 +1,8 @@
 <h1>MVC - Mirth Version Control</h1>
 
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/Mysttic/MVC)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/Mysttic/MVC?include_prereleases)
+
 ![MCVClogo](https://github.com/user-attachments/assets/7aa0d96f-4d1b-4f3f-bb56-ddb2bc5abdf1)
 
 **Allow you to backup your Mirth Connect Configurations with full changes history**
