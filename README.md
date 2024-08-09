@@ -36,9 +36,38 @@ In the startup parameters we pass the following configuration parameters:
 
 Example startup script:
 
- _mvc.mssqllistener.exe /connectionstring="TrustServerCertificate=True;User ID=sa;Password=sa;Initial Catalog=mirthdb;Data Source=localhost" /logpath="C:\Logs" /repopath="C:\Repo" /usegit=true_
+```
+ mvc.mssqllistener.exe /connectionstring="TrustServerCertificate=True;User ID=sa;Password=sa;Initial Catalog=mirthdb;Data Source=localhost" /logpath="C:\Logs" /repopath="C:\Repo" /usegit=true
+```
 
- <h2>Disclaimer</h2>
+<h3>Docker</h3>
+
+Main purpose of this solution was to deliver light version of MVC that can be hosted on docker container. You can download proper version from docker hub [here](https://hub.docker.com/u/mysttic) , or by using this script (_mssql, mysql, postgresql, oracle_):
+
+```
+docker pull mysttic/mvc.{database}listener
+```
+
+When you download the image, you can run the container using code below (adapted to your parameters ofc).
+
+```
+docker run mvc.postgresqllistener --build-arg /connectionstring="Host=localhost;Port=5432;Database=mirthdb;Username=mirthdb;Password=mirthdb" /logpath="app/Logs" /repopath="app/Repo" /usegit=true
+```
+
+
+Logs and Repo files would be stored by default inside the container, but if you want you can store them on host directory by mounting it to the container ([more info here](https://docs.docker.com/storage/bind-mounts/))
+
+Below example:
+
+```
+docker run -v /host_mnt/c/MVC:/app/MVC mvc.postgresqllistener --build-arg /connectionstring="Host=localhost;Port=5432;Database=mirthdb;Username=mirthdb;Password=mirthdb" /logpath="/app/MVC/Logs" /repopath="/app/MVC/Repo" /usegit=true
+```
+
+Just remember to adjust this directory in further parameters (logpath and repopath).
+
+##### And very important reminder, these containers were hosted on LINUX, so remember about catalogue structures.
+
+<h2>Disclaimer</h2>
 This project and its creators are not affiliated with NextGen Healthcare in any way. 
 
 The solution is an independent application not linked to the Mirth Connect product source code. 
