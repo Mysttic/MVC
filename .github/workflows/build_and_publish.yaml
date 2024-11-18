@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
@@ -47,7 +47,7 @@ jobs:
 
   release:
     needs: build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -81,9 +81,7 @@ jobs:
 
       - name: Get Version Tag
         id: version
-        run: |
-          echo "tag=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
-          echo "TAG_NAME=${{ env.tag }}" >> $GITHUB_ENV
+        run: echo "tag=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         id: create_release
