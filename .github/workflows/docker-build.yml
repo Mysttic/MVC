@@ -12,10 +12,10 @@ jobs:
     strategy:
       matrix:
         project:
-          - mvc.mssqllistener
-          - mvc.mysqlListener
-          - mvc.oraclelistener
-          - mvc.postgresqllistener
+          - MVC.MSSQLLlistener
+          - MVC.MySQLListener
+          - MVC.OracleListener
+          - MVC.PostgreSQLListener
         dockerfile:
           - mvc.mssqllistener.dockerfile
           - mvc.mysqllistener.dockerfile
