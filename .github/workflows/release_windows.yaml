@@ -31,13 +31,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj
+        run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64
 
       - name: Build
-        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -r win-x64 -p:PlatformTarget=x64
-      
+        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64 -p:PlatformTarget=x64
+
       - name: Publish
-        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -r win-x64 -p:PlatformTarget=x64 --self-contained --output ./output/${{ matrix.project }}
+        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64 -p:PlatformTarget=x64 --self-contained --output ./output/${{ matrix.project }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
