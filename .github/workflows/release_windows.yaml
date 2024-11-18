@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Release Windows
 
 on:
   push:
@@ -34,10 +34,10 @@ jobs:
         run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj
 
       - name: Build
-        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore
-
+        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -r win-x64 -p:PlatformTarget=x64
+      
       - name: Publish
-        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore --output ./output/${{ matrix.project }}
+        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -r win-x64 -p:PlatformTarget=x64 --self-contained --output ./output/${{ matrix.project }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
