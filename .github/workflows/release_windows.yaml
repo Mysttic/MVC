@@ -1,0 +1,149 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - Mysttic-actions
+  pull_request:
+    branches:
+      - Mysttic-actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        project:
+          - MVC
+          - MVC.MSSQLListener
+          - MVC.MySQLListener
+          - MVC.OracleListener
+          - MVC.PostgreSQLListener
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj
+
+      - name: Build
+        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore --output ./output/${{ matrix.project }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-${{ matrix.project }}
+          path: ./output/${{ matrix.project }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Download MSSQLListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.MSSQLListener
+          path: ./output/MVC.MSSQLListener
+
+      - name: Download MySQLListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.MySQLListener
+          path: ./output/MVC.MySQLListener
+
+      - name: Download OracleListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.OracleListener
+          path: ./output/MVC.OracleListener
+
+      - name: Download PostgreSQLListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.PostgreSQLListener
+          path: ./output/MVC.PostgreSQLListener
+
+      - name: Set up Git
+        run: git config --global user.name 'github-actions'
+
+      - name: Get Version Tag
+        id: version
+        run: echo "::set-output name=tag::v1.0.${{ github.run_number }}"
+
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: Release ${{ steps.version.outputs.tag }}
+          draft: false
+          prerelease: false
+
+
+      - name: Compress MSSQLListener directory
+        run: zip -r MVC.MSSQLListener.zip ./output/MVC.MSSQLListener
+
+      - name: Upload MSSQLListener Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: MVC.MSSQLListener.zip
+          asset_name: MVC.MSSQLListener.zip
+          asset_content_type: application/zip
+
+      - name: Compress MySQLListener directory
+        run: zip -r MVC.MySQLListener.zip ./output/MVC.MySQLListener
+
+      - name: Upload MySQLListener Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: MVC.MySQLListener.zip
+          asset_name: MVC.MySQLListener.zip
+          asset_content_type: application/zip
+
+      - name: Compress OracleListener directory
+        run: zip -r MVC.OracleListener.zip ./output/MVC.OracleListener
+
+      - name: Upload OracleListener Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: MVC.OracleListener.zip
+          asset_name: MVC.OracleListener.zip
+          asset_content_type: application/zip
+
+      - name: Compress PostgreSQLListener directory
+        run: zip -r MVC.PostgreSQLListener.zip ./output/MVC.PostgreSQLListener
+
+      - name: Upload PostgreSQLListener Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: MVC.PostgreSQLListener.zip
+          asset_name: MVC.PostgreSQLListener.zip
+          asset_content_type: application/zip
