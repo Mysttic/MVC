@@ -26,6 +26,14 @@
 		settings.GitCodeTemplates = args.Where(arg => arg.ToLower().StartsWith("/gitcodetemplates="))
 								   .Select(arg => arg.Substring("/gitcodetemplates=".Length))
 								   .FirstOrDefault() ?? "true";
+		settings.CommitMode = args.Where(arg => arg.ToLower().StartsWith("/commitmode="))
+			.Select(arg => arg.Substring("/commitmode=".Length))
+								.FirstOrDefault() switch
+								{
+									"Auto" => CommitMode.Auto,
+									"Manual" => CommitMode.Manual,
+									_ => CommitMode.Auto
+								};
 		return settings;
 	}
 }

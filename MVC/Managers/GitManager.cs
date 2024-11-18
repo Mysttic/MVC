@@ -42,7 +42,7 @@ public class GitManager : IGitManager
 
 			await Stage(filePath);
 
-			if (HasChanges())
+			if (HasChanges() && Settings.CommitMode == CommitMode.Auto)
 				await Commit(dto.Id, caller);
 		}
 	}
