@@ -37,7 +37,7 @@ jobs:
         run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64 -p:PlatformTarget=x64
 
       - name: Publish
-        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64 -p:PlatformTarget=x64 --self-contained --output ./output/${{ matrix.project }}
+        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore --runtime win-x64 -p:PlatformTarget=x64 --self-contained --output ./output/${{ matrix.project }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
