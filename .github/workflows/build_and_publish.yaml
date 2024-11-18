@@ -1,0 +1,68 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - Mysttic-actions
+  pull_request:
+    branches:
+      - Mysttic-actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        project:
+          - MVC
+          - MVC.MSSQLListener
+          - MVC.MySQLListener
+          - MVC.OracleListener
+          - MVC.PostgreSQLListener
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj
+
+      - name: Build
+        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore --output ./output/${{ matrix.project }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.sha }}
+          release_name: Release ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output
+          asset_name: output
+          asset_content_type: application/zip
