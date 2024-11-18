@@ -54,8 +54,12 @@ jobs:
         run: echo "tag=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Ensure output directory exists
-        run: ls -la ./output
-
+        run: |
+          if [ ! -d "./output" ]; then
+            echo "Output directory does not exist. Creating ./output directory."
+            mkdir -p ./output
+          fi
+          
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
