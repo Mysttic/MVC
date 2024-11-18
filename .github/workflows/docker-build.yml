@@ -38,7 +38,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/"${{ env.lowercase_project_name }}":latest -f ./${{ matrix.dockerfile }} ./${{ matrix.project }}
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/"${{ env.lowercase_project_name }}":latest -f ./${{ matrix.dockerfile }} .
 
       - name: Push Docker image to DockerHub
         run: |
