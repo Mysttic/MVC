@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         project:
-          - MVC.MSSQLLlistener
+          - MVC.MSSQLListener
           - MVC.MySQLListener
           - MVC.OracleListener
           - MVC.PostgreSQLListener
