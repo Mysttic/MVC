@@ -76,14 +76,6 @@ jobs:
           name: output-MVC.PostgreSQLListener
           path: ./output/MVC.PostgreSQLListener
 
-
- #     - name: Rename artifacts
- #       run: |
- #         mv ./output/MVC.MySQLListener/MVC.MySQLListener ./output/MVC.MySQLListener/MVC.MySQLListener.exe
- #         mv ./output/MVC.MSSQLListener/MVC.MSSQLListener ./output/MVC.MSSQLListener/MVC.MSSQLListener.exe
- #         mv ./output/MVC.OracleListener/MVC.OracleListener ./output/MVC.OracleListener/MVC.OracleListener.exe
- #         mv ./output/MVC.PostgreSQLListener/MVC.PostgreSQLListener ./output/MVC.PostgreSQLListener/MVC.PostgreSQLListener.exe
-
       - name: Set up Git
         run: git config --global user.name 'github-actions'
 
