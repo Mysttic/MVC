@@ -3,10 +3,10 @@ name: Build and Publish
 on:
   push:
     branches:
-      - main
+      - Mysttic-actions
   pull_request:
     branches:
-      - main
+      - Mysttic-actions
 
 jobs:
   build:
