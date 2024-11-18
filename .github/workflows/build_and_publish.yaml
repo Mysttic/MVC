@@ -39,10 +39,11 @@ jobs:
       - name: Publish
         run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore --output ./output/${{ matrix.project }}
 
-      - name: List output directory contents
-        run: |
-          echo "Listing contents of ./output/${{ matrix.project }}"
-          ls -la ./output/${{ matrix.project }}
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: output
+          path: ./output
 
   release:
     needs: build
@@ -51,6 +52,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: output
+
       - name: Set up Git
         run: git config --global user.name 'github-actions'
 
@@ -58,13 +64,6 @@ jobs:
         id: version
         run: echo "tag=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
-      - name: Ensure output directory exists
-        run: |
-          if [ ! -d "./output" ]; then
-            echo "Output directory does not exist."
-            exit 1
-          fi
-          
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
