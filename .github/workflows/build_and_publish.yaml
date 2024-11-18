@@ -51,13 +51,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
-      - name: Download MVC artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: output-MVC
-          path: ./output/MVC
-
+      
       - name: Download MSSQLListener artifact
         uses: actions/download-artifact@v4
         with:
@@ -81,6 +75,13 @@ jobs:
         with:
           name: output-MVC.PostgreSQLListener
           path: ./output/MVC.PostgreSQLListener
+
+      - name: Rename artifacts
+        run: |
+          mv ./output/MVC.MySQLListener/MVC.MySQLListener ./output/MVC.MySQLListener/MVC.MySQLListener.exe
+          mv ./output/MVC.MSSQLListener ./output/MVC.MSSQLListener/MVC.MSSQLListener.exe
+          mv ./output/MVC.OracleListener ./output/MVC.OracleListener/MVC.OracleListener.exe
+          mv ./output/MVC.PostgreSQLListener ./output/MVC.PostgreSQLListener/MVC.PostgreSQLListener.exe
 
       - name: Set up Git
         run: git config --global user.name 'github-actions'
