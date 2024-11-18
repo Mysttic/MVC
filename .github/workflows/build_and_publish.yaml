@@ -42,8 +42,8 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: output
-          path: ./output
+          name: output-${{ matrix.project }}
+          path: ./output/${{ matrix.project }}
 
   release:
     needs: build
@@ -52,10 +52,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Download build artifacts
+      - name: Download MVC artifact
         uses: actions/download-artifact@v4
         with:
-          name: output
+          name: output-MVC
+          path: ./output/MVC
+
+      - name: Download MSSQLListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.MSSQLListener
+          path: ./output/MVC.MSSQLListener
+
+      - name: Download MySQLListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.MySQLListener
+          path: ./output/MVC.MySQLListener
+
+      - name: Download OracleListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.OracleListener
+          path: ./output/MVC.OracleListener
+
+      - name: Download PostgreSQLListener artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: output-MVC.PostgreSQLListener
+          path: ./output/MVC.PostgreSQLListener
 
       - name: Set up Git
         run: git config --global user.name 'github-actions'
