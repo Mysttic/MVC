@@ -3,9 +3,7 @@ name: Docker Build and Push
 on:
   push:
     branches:
-      - master
-      - 'release/*'
-      - Mysttic-actions
+      - 'release'     
 
 jobs:
   build-and-push:
