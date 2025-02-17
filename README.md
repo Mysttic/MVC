@@ -96,3 +96,6 @@ This project and its creators are not affiliated with NextGen Healthcare in any 
 The solution is an independent application not linked to the Mirth Connect product source code. 
 
 For more information on regulations, please see the licensing arrangements.
+
+[See more](documentation/documentation.md)
+
