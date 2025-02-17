@@ -5,7 +5,9 @@ internal class Program
 	private static async Task Main(string[] args)
 	{
 		// Sprawdź, czy aplikacja działa w kontenerze
-		if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+		if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" ||
+			Environment.UserInteractive ||
+			args.Contains("console"))
 		{
 			// Uruchom logikę bez ServiceBase (tryb konsolowy)
 			Settings settings = new Settings().FillParameters(args);
