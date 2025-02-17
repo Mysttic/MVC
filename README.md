@@ -28,9 +28,13 @@ This solution focuses solely on separating the dependencies of the operation for
 easier startup and the possibility of containerization.
 
 <h2>How to use</h2>
-In the startup parameters we pass the following configuration parameters:
+The application can be used in 3 different configurations:
 
-- /connection string - mandatory - access to the database to listen to
+<h3>User Interactive</h3>
+We can run it directly from the console by passing the run parameters as an arguments:
+
+- /console - runs the application in console mode
+- /connection string - access to the database to listen to
 - /logpath - location where logs are saved
 - /repopath - location where versions of changes are saved
 - /usegit - (default false) - specifies whether we want to use the git service for the change history or the option to save individual versions in separate files
@@ -40,8 +44,24 @@ In the startup parameters we pass the following configuration parameters:
 Example startup script:
 
 ```
- mvc.mssqllistener.exe /connectionstring="TrustServerCertificate=True;User ID=sa;Password=sa;Initial Catalog=mirthdb;Data Source=localhost" /logpath="C:\Logs" /repopath="C:\Repo" /usegit=true
+ mvc.mssqllistener.exe /console /connectionstring="TrustServerCertificate=True;User ID=sa;Password=sa;Initial Catalog=mirthdb;Data Source=localhost" /logpath="C:\Logs" /repopath="C:\Repo" /usegit=true
 ```
+
+<h3>Service</h3>
+We can install the application as a service. To do this, you need to install it from the file included with the specific solution.
+You need to find and run the **install.cmd** file as administrator.
+
+This file must be run in the directory where the .exe file of the service being installed is located. The script is universal for all listeners and automatically detects the file to be installed.
+
+![image](https://github.com/user-attachments/assets/90d44bd9-8336-4b69-b5e6-8995a7e85184)
+
+Running the installer, we will need to provide the application startup parameters. 
+After providing them and clicking Enter, the script will continue with the installation process. 
+If the service was previously installed, the script will try to uninstall it. 
+When the service is installed, it will start with the parameters provided.
+
+![image](https://github.com/user-attachments/assets/08132662-0ed5-42e1-985b-6555d8a74d8a)
+
 
 <h3>Docker</h3>
 
