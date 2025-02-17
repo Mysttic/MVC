@@ -3,10 +3,7 @@ name: Release Windows
 on:
   push:
     branches:
-      - Mysttic-actions
-  pull_request:
-    branches:
-      - Mysttic-actions
+      - release
 
 jobs:
   build:
