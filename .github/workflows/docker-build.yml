@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - 'release/*'
+      - Mysttic-actions
 
 jobs:
   build-and-push:
