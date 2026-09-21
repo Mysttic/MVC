@@ -3,42 +3,87 @@ name: Docker Build and Push
 on:
   push:
     branches:
-      - 'release'     
+      - release
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'docs/**'
+  workflow_dispatch:
+
+# There is no `pull_request` trigger here on purpose: nothing in this repository
+# runs CI on a pull request, so a pull request into the default branch finishes
+# green without a single job having run. Only a push to `release`, or a manual
+# dispatch, is allowed to spend Actions minutes.
+
+# This workflow publishes: every matrix leg overwrites a `:latest` tag on
+# DockerHub, which is persistent state four independent jobs write to. A run is
+# therefore never cancelled in flight - cancelling mid-matrix would leave the
+# four `:latest` tags pointing at different commits, with nothing in the UI
+# flagging it. A newer push queues behind the run in flight instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Guard for `workflow_dispatch`: the 'Run workflow' button defaults to the
+    # DEFAULT branch (`master`), and the only output of this job is a push to
+    # `mysttic/mvc.<db>listener:latest`, which README tells users to pull. A
+    # dispatch from anywhere but `release` would silently publish unreleased
+    # code, so it is skipped instead (a skipped job reports green - intended).
+    # Dispatching from `release` still works and is the way to re-push the
+    # images by hand.
+    if: github.ref == 'refs/heads/release'
+
     strategy:
+      fail-fast: false
       matrix:
-        project:
-          - MVC.MSSQLListener
-          - MVC.MySQLListener
-          - MVC.OracleListener
-          - MVC.PostgreSQLListener
-        dockerfile:
-          - mvc.mssqllistener.dockerfile
-          - mvc.mysqllistener.dockerfile
-          - mvc.oraclelistener.dockerfile
-          - mvc.postgresqllistener.dockerfile
+        # One `include` list pairing every project with ITS OWN dockerfile.
+        # `project:` and `dockerfile:` used to be two independent keys, so GitHub
+        # expanded the cartesian product: 16 jobs instead of 4, 12 of them
+        # building a project from the wrong dockerfile while all 4 jobs sharing a
+        # project raced for the same `<user>/<project>:latest` tag.
+        include:
+          - project: MVC.MSSQLListener
+            dockerfile: mvc.mssqllistener.dockerfile
+          - project: MVC.MySQLListener
+            dockerfile: mvc.mysqllistener.dockerfile
+          - project: MVC.OracleListener
+            dockerfile: mvc.oraclelistener.dockerfile
+          - project: MVC.PostgreSQLListener
+            dockerfile: mvc.postgresqllistener.dockerfile
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Convert project name to lowercase
         id: lowercase
-        run: echo "lowercase_project_name=$(echo ${{ matrix.project }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        env:
+          PROJECT: ${{ matrix.project }}
+        run: echo "name=${PROJECT,,}" >> "$GITHUB_OUTPUT"
 
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/"${{ env.lowercase_project_name }}":latest -f ./${{ matrix.dockerfile }} .
-
-      - name: Push Docker image to DockerHub
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.lowercase_project_name }}:latest
+      # Build and push in one step, with the layer cache kept in the Actions
+      # cache (`type=gha`) so a rebuild no longer restores and publishes the
+      # whole dependency graph inside the image from scratch.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ steps.lowercase.outputs.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

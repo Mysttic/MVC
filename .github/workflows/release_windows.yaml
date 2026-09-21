@@ -1,18 +1,46 @@
-name: Release Windows 
+name: Release Windows
 
 on:
   push:
     branches:
       - release
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'docs/**'
+  workflow_dispatch:
+
+# There is no `pull_request` trigger here on purpose: nothing in this repository
+# runs CI on a pull request, so a pull request into the default branch finishes
+# green without a single job having run. Only a push to `release`, or a manual
+# dispatch, is allowed to spend Actions minutes.
+
+# This workflow publishes, so a run in flight is never cancelled: a second push
+# to `release` queues behind it instead of leaving a release with only some of
+# its assets attached. The group sits at WORKFLOW level on purpose - a job-level
+# group is evaluated once per matrix job instance, so the four legs of the same
+# run would all land in one group and cancel each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 30
 
     strategy:
+      # `fail-fast` deliberately left at its default (true): all four listeners
+      # compile the same shared `MVC` class library, so the overwhelmingly
+      # common failure is a compile error that fails every leg identically.
+      # Letting the first failure cancel the rest saves three full
+      # windows-latest builds (billed at 2x) and loses no diagnostic detail.
       matrix:
+        # `MVC` dropped from the matrix: it is a class library (no OutputType)
+        # that the four listeners pull in through a ProjectReference, so it is
+        # already inside every published listener. Its artifact was never
+        # downloaded by the `release` job and never shipped in a release.
         project:
-          - MVC
           - MVC.MSSQLListener
           - MVC.MySQLListener
           - MVC.OracleListener
@@ -20,35 +48,73 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          # The key carries `matrix.project`. Without it all four legs compute
+          # the same key: only the leg that wins the first save race ever
+          # stores a cache, every later run gets an exact hit so nothing is
+          # saved again, and the other three listeners re-download their
+          # packages from nuget.org on every single release.
+          key: ${{ runner.os }}-nuget-${{ matrix.project }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ matrix.project }}-
+            ${{ runner.os }}-nuget-
+
+      # `--force` dropped: it re-downloaded the whole dependency graph on every
+      # run and made the cache above pointless.
       - name: Restore dependencies
-        run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj -r win-x64 --force
+        run: dotnet restore ${{ matrix.project }}/${{ matrix.project }}.csproj -r win-x64
 
-      - name: Build
-        run: dotnet build ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64 -p:PlatformTarget=x64
-
+      # The separate `dotnet build` step is gone: `dotnet publish` builds as
+      # well, so the two steps were compiling the same projects twice.
       - name: Publish
         run: dotnet publish ${{ matrix.project }}/${{ matrix.project }}.csproj --configuration Release --no-restore -r win-x64 --self-contained --output ./output/${{ matrix.project }}
 
-      - name: Upload build artifacts
+      # Zipped here instead of in the `release` job, so what travels between the
+      # two jobs is the ~20-30 MB .zip that actually ships rather than the
+      # ~70-100 MB raw self-contained publish tree. The archive layout is
+      # unchanged (one top-level `MVC.*Listener` folder), only the job that
+      # creates it moved.
+      - name: Compress publish output
+        run: Compress-Archive -Path ./output/${{ matrix.project }} -DestinationPath ${{ matrix.project }}.zip
+
+      # Kept on purpose: this artifact is the only way the `release` job can get
+      # at the binaries. `retention-days: 7` keeps 'Re-run failed jobs' usable
+      # for a week - re-running just the failed `release` job is far cheaper
+      # than paying for four more windows-latest builds.
+      - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
           name: output-${{ matrix.project }}
-          path: ./output/${{ matrix.project }}
+          path: ${{ matrix.project }}.zip
+          retention-days: 7
 
   release:
     needs: build
     runs-on: windows-latest
+    timeout-minutes: 30
+
+    # Guard for `workflow_dispatch`: the 'Run workflow' button defaults to the
+    # DEFAULT branch (`master`), and without this check a dispatch from there
+    # would publish a non-draft GitHub Release plus a tag built from unreleased
+    # code, and burn a `github.run_number`. The `build` job stays dispatchable
+    # from any branch; a dispatch from outside `release` now builds and stops.
+    # The skipped job reports green, which is intended.
+    if: github.ref == 'refs/heads/release'
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-      
+        uses: actions/checkout@v4
+
       - name: Download MSSQLListener artifact
         uses: actions/download-artifact@v4
         with:
@@ -93,21 +159,17 @@ jobs:
           prerelease: false
 
 
-      - name: Compress MSSQLListener directory
-        run: Compress-Archive -Path ./output/MVC.MSSQLListener -DestinationPath MVC.MSSQLListener.zip
-
+      # The .zip files are built by the `build` job and arrive through the
+      # downloads above, so there is nothing left to compress here.
       - name: Upload MSSQLListener Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: MVC.MSSQLListener.zip
+          asset_path: ./output/MVC.MSSQLListener/MVC.MSSQLListener.zip
           asset_name: MVC.MSSQLListener.zip
           asset_content_type: application/zip
-
-      - name: Compress MySQLListener directory
-        run: Compress-Archive -Path ./output/MVC.MySQLListener -DestinationPath MVC.MySQLListener.zip
 
       - name: Upload MySQLListener Release Asset
         uses: actions/upload-release-asset@v1
@@ -115,12 +177,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: MVC.MySQLListener.zip
+          asset_path: ./output/MVC.MySQLListener/MVC.MySQLListener.zip
           asset_name: MVC.MySQLListener.zip
           asset_content_type: application/zip
-
-      - name: Compress OracleListener directory
-        run: Compress-Archive -Path ./output/MVC.OracleListener -DestinationPath MVC.OracleListener.zip
 
       - name: Upload OracleListener Release Asset
         uses: actions/upload-release-asset@v1
@@ -128,12 +187,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: MVC.OracleListener.zip
+          asset_path: ./output/MVC.OracleListener/MVC.OracleListener.zip
           asset_name: MVC.OracleListener.zip
           asset_content_type: application/zip
-
-      - name: Compress PostgreSQLListener directory
-        run: Compress-Archive -Path ./output/MVC.PostgreSQLListener -DestinationPath MVC.PostgreSQLListener.zip
 
       - name: Upload PostgreSQLListener Asset
         uses: actions/upload-release-asset@v1
@@ -141,6 +197,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: MVC.PostgreSQLListener.zip
+          asset_path: ./output/MVC.PostgreSQLListener/MVC.PostgreSQLListener.zip
           asset_name: MVC.PostgreSQLListener.zip
           asset_content_type: application/zip
