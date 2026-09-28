@@ -87,16 +87,35 @@ jobs:
       - name: Compress publish output
         run: Compress-Archive -Path ./output/${{ matrix.project }} -DestinationPath ${{ matrix.project }}.zip
 
-      # Kept on purpose: this artifact is the only way the `release` job can get
-      # at the binaries. `retention-days: 7` keeps 'Re-run failed jobs' usable
-      # for a week - re-running just the failed `release` job is far cheaper
-      # than paying for four more windows-latest builds.
+      # Kept on purpose: this artifact is only transport - the one way the
+      # `release` job can get at the binaries. Once the release is published
+      # the zips live on as release assets, so the last step of `release`
+      # deletes this run's artifacts right away and they stop counting against
+      # the Actions storage quota. `retention-days: 1` is the fallback for when
+      # that step does not run - the artifacts then stay for 24 hours only:
+      #  - EVERY 'Re-run failed jobs' depends on them, so it works only within
+      #    a day. That covers a failed `release` (re-running just `release`,
+      #    far cheaper than four more windows-latest builds) AND a partly
+      #    failed `build`: a leg that finished before fail-fast cancelled the
+      #    others keeps its artifact from the first attempt and is NOT rebuilt,
+      #    so after 24 hours `release` fails on that download. After a day use
+      #    'Re-run all jobs', push again, or 'Run workflow' from `release`
+      #    (a dispatch reads this file from `release`, so it must carry
+      #    `workflow_dispatch` there);
+      #  - a re-run keeps `github.run_number`, so it can only finish a release
+      #    that was not created yet: if `release` failed AFTER 'Create GitHub
+      #    Release', tag v1.0.<run_number> already exists and any re-run fails
+      #    with "already_exists". Delete that release and its tag first, or
+      #    upload the missing assets by hand;
+      #  - a manual dispatch from any branch other than `release` skips the
+      #    `release` job, so these artifacts are the ONLY product of that run -
+      #    download them from the run page within 24 hours.
       - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
           name: output-${{ matrix.project }}
           path: ${{ matrix.project }}.zip
-          retention-days: 7
+          retention-days: 1
 
   release:
     needs: build
@@ -110,6 +129,17 @@ jobs:
     # from any branch; a dispatch from outside `release` now builds and stops.
     # The skipped job reports green, which is intended.
     if: github.ref == 'refs/heads/release'
+
+    # Needed by the last step, which deletes this run's artifacts
+    # (`actions: write`). The workflow has no top-level `permissions:` block and
+    # one is NOT added there, so `build` keeps the repository default token.
+    # A job-level block REPLACES the default in full, so it lists everything
+    # this job's GITHUB_TOKEN is used for: `contents: read` for the checkout.
+    # The release and its assets are created with the RELEASE_GITHUB_TOKEN
+    # secret, not with GITHUB_TOKEN, so no `contents: write` is needed here.
+    permissions:
+      contents: read
+      actions: write
 
     steps:
       - name: Checkout repository
@@ -200,3 +230,26 @@ jobs:
           asset_path: ./output/MVC.PostgreSQLListener/MVC.PostgreSQLListener.zip
           asset_name: MVC.PostgreSQLListener.zip
           asset_content_type: application/zip
+
+      # The four zips are now release assets, so the transport artifacts from
+      # `build` (~20-30 MB each) are deleted instead of sitting in the Actions
+      # storage quota until retention expires.
+      #  - `if: success()`: when anything above failed the artifacts are kept
+      #    (for 1 day) so 'Re-run failed jobs' can still download them - which
+      #    finishes the release only if it failed before 'Create GitHub
+      #    Release' succeeded (see the comment on 'Upload release package').
+      #  - `continue-on-error: true`: a failed cleanup must never turn a
+      #    published release red.
+      #  - `shell: bash`: this job runs on windows-latest, whose default shell
+      #    is pwsh (no `\` line continuation, no xargs); Git Bash is on the
+      #    runner. `tr -d '\r'` guards the ids against CRLF line endings.
+      - name: Delete this run's artifacts
+        if: success()
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '.artifacts[].id' \
+            | tr -d '\r' \
+            | xargs -r -I{} gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/{}"
